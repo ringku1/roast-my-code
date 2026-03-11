@@ -27,6 +27,8 @@ Rules:
 - End with ONE line of grudging encouragement`,
 };
 
+const MAX_CODE_LENGTH = 10_000;
+
 export async function POST(request: Request) {
   const { code, language, level = "medium" } = await request.json();
 
@@ -36,13 +38,19 @@ export async function POST(request: Request) {
     });
   }
 
+  if (code.length > MAX_CODE_LENGTH) {
+    return new Response(
+      JSON.stringify({ error: `Code exceeds ${MAX_CODE_LENGTH} character limit` }),
+      { status: 400 }
+    );
+  }
+
   const systemPrompt =
     ROAST_PROMPTS[level as keyof typeof ROAST_PROMPTS] ?? ROAST_PROMPTS.medium;
 
   const stream = client.messages.stream({
     model: "claude-opus-4-6",
-    max_tokens: 1024,
-    thinking: { type: "adaptive" },
+    max_tokens: 4096,
     system: systemPrompt,
     messages: [
       {

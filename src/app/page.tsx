@@ -36,6 +36,12 @@ export default function Home() {
         signal: abortRef.current.signal,
       });
 
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: "Unknown error" }));
+        setRoast(`Error: ${err.error ?? res.statusText}`);
+        return;
+      }
+
       const reader = res.body!.getReader();
       const decoder = new TextDecoder();
 
@@ -114,7 +120,12 @@ export default function Home() {
 
         {/* Code input */}
         <div>
-          <label className="block text-sm text-zinc-400 mb-1">Paste your code</label>
+          <div className="flex justify-between mb-1">
+            <label className="text-sm text-zinc-400">Paste your code</label>
+            <span className={`text-xs ${code.length > 9000 ? "text-red-400" : "text-zinc-600"}`}>
+              {code.length.toLocaleString()} / 10,000
+            </span>
+          </div>
           <textarea
             value={code}
             onChange={(e) => setCode(e.target.value)}
@@ -127,7 +138,7 @@ export default function Home() {
         {/* Action button */}
         <button
           onClick={loading ? handleStop : handleRoast}
-          disabled={!code.trim() && !loading}
+          disabled={(!code.trim() || code.length > 10_000) && !loading}
           className={`w-full py-3 rounded-xl font-bold text-lg transition-all ${
             loading
               ? "bg-red-700 hover:bg-red-800 text-white"
